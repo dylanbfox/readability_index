@@ -14,7 +14,7 @@ DATABASES = {
 }
 
 # # Allow all host hosts/domain names for this site
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['readability-index.herokuapp.com',]
 
 # Parse database configuration from $DATABASE_URL
 import dj_database_url
