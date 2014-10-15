@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+
+{% block page_content %}
+<div class="container">
+	<p id="explain">The Automated Readability Index (ARI) is a readability test designed to gauge the understandability of a text. It produces an approximate representation of the US grade level needed to comprehend the text.
+	Using natural language processing (credit to NLTK), This site produces this score for top articles via CNN's RSS feed.
+	</p> 
+	{% for entry in entries %}
+		{% if entry.rounded_score > 0 %}
+		<div>
+			<h1>{{ entry.title }} <span class="score">(Score Of: {{ entry.raw_score }})
+			</span></h1>
+
+			<p>{{ entry.summary|safe }}</p>
+			<a href="{{ entry.link }}">Read full article</a>
+		</div>
+		<br />
+		<br />
+		{% endif %}
+	{% endfor %}
+</div>
+{% endblock page_content %}

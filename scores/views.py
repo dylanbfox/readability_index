@@ -1,51 +1,58 @@
+from __future__ import division
+
+import feedparser
+
 from django.shortcuts import render
+from django.http import HttpResponse
+
 from scores.models import Entry
+from scores.utils import get_paras, get_raw_story_text
+from scores.utils import get_story_sents, get_story_words
+from scores.utils import calc_wps, calc_lpw, calc_score
 
 def display_scores(request):
+	context_dict = {}
 
 	# current entries
-	# stored_entries = [e.e_id for e in Entry.objects.all()]
+	stored_entry_ids = [e.e_id for e in Entry.objects.all()]
 
 	# hit NYT rss feed
 	d = feedparser.parse('http://rss.cnn.com/rss/cnn_topstories.rss')
 
 	new_entries = []
+	for e in d.entries[:15]:
+		if not e.id in stored_entry_ids:
 
-	for e in d.entries:
-		response = urllib.urlopen(d.entries[0].link)
-		html = response.read()
-		soup = BeautifulSoup(html)
-		para_nodes = soup.find_all('p')
+			paras = get_paras(e)
+			raw_text = get_raw_story_text(paras)
+			story_sents = get_story_sents(raw_text)
+			story_words = get_story_words(raw_text)
+			wps = calc_wps(story_sents)
+			lpw = calc_lpw(story_words)
+			raw_score = calc_score(wps, lpw)
+			rounded_score = round(raw_score)
 
-		story_text = []
-		for p in para_nodes:
-			if 'cnn_storypgraphtxt' in p.get('class', ''):
-				story_text.append(p.getText())
+			new_entry = Entry(
+				title = e.title,
+				summary = e.summary,
+				link = e.link,
+				e_id = e.id,
+				raw_score = raw_score,
+				rounded_score = rounded_score,
+				wps = wps,
+				lpw = lpw
+			)
 
-		raw_story_text = ' '.join(story_text)
-		# print raw_story_text
+			new_entries.append(new_entry)
 
-		## create sentences
-		sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
-		story_sents = sent_detector.tokenize(raw_story_text)
-		sent_counts = [len(PunktWordTokenizer().tokenize(sent))
-						for sent in story_sents]
+	Entry.objects.bulk_create(new_entries)
 
-		wps = sum(sent_counts) / len(sent_counts)
+	entries = Entry.objects.all()
+	context_dict['entries'] = entries
 
-		## create words
-		# out of box tokenizer doesn't include puncitation,
-		# so we can easily filter it out
-		story_words = nltk.word_tokenize(raw_story_text)
-		story_words = [w for w in story_words if re.search(r'\w', w)]
-		word_counts = [len(w) for w in story_words]
+	return render(request, "scores/scores.html", context_dict)
 
-		lpw = sum(word_counts) / len(word_counts)
 
-		score = 4.71 * lpw + 0.5 * wps - 21.43
-
-		print score
-		print round(score)
 
 
 
