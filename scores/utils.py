@@ -30,6 +30,7 @@ def get_raw_story_text(paras):
 
 def get_story_sents(raw_text):
 
+	nltk.data.path.append('./nltk_data/')
 	sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 	story_sents = sent_detector.tokenize(raw_text)
 
